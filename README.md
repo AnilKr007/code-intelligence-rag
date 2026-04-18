@@ -7,7 +7,7 @@ It reads code files from a repository, splits them into smaller chunks, and gene
 - Ollama (Local LLM inference)  
 - Python  
 - LangChain (orchestration)  
-
+- Chroma  
 ## Setup Instructions
 
 ### 1. Install Ollama
