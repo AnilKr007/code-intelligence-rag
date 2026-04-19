@@ -1,6 +1,4 @@
-# query.py
-
-from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma  # Changed from langchain_community
 from langchain_community.llms import Ollama
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
@@ -12,10 +10,11 @@ from formatter import format_docs_with_metadata, print_retrieved_docs
 
 
 def main():
-    print(" Loading vector DB...")
+    print("Loading vector DB...")
 
     embedding = get_embedding_model()
 
+    # Load existing vectorstore (no persist() method needed)
     vectorstore = Chroma(
         persist_directory=CHROMA_DB_DIR,
         embedding_function=embedding
@@ -23,10 +22,11 @@ def main():
 
     retriever = get_retriever(vectorstore, TOP_K)
 
+    # Use the smaller model from config
     llm = Ollama(model=LLM_MODEL)
 
     prompt = ChatPromptTemplate.from_template("""
-You are an assistant. Answer ONLY from the provided context.
+You are a code assistant. Answer ONLY from the provided context.
 
 If answer is not found, say "I don't know".
 
@@ -36,18 +36,18 @@ Context:
 Question:
 {question}
 
-Also mention the source file names in your answer.
+Mention the source file names in your answer.
 """)
 
     chain = prompt | llm | StrOutputParser()
 
     while True:
-        query = input("\n Ask a question (or 'exit'): ")
+        query = input("\nAsk a question (or 'exit'): ")
 
         if query.lower() == "exit":
             break
 
-        #  Multi-query expansion
+        # Multi-query expansion
         queries = expand_query(query)
 
         all_docs = []
@@ -65,18 +65,22 @@ Also mention the source file names in your answer.
                 seen.add(content)
                 unique_docs.append(doc)
 
-        # Debug (VERY IMPORTANT)
+        # Debug
         print_retrieved_docs(unique_docs)
 
         context = format_docs_with_metadata(unique_docs)
 
-        response = chain.invoke({
-            "context": context,
-            "question": query
-        })
+        try:
+            response = chain.invoke({
+                "context": context,
+                "question": query
+            })
 
-        print("\n Final Answer:")
-        print(response)
+            print("\nFinal Answer:")
+            print(response)
+        except Exception as e:
+            print(f"\nError: {e}")
+            print("Try a different question or check if Ollama is running")
 
 
 if __name__ == "__main__":

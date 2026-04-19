@@ -5,3 +5,4 @@ ollama
 tiktoken
 pypdf
 langchain-ollama
+langchain_experimental
